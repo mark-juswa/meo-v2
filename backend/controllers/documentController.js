@@ -53,6 +53,11 @@ export const uploadRequirements = async (req, res) => {
 
 // UPLOAD REVISIONS 
 
+// Helper function to convert file to Base64
+const fileToBase64 = (file) => {
+    return file.buffer.toString('base64');
+};
+
 export const uploadRevision = async (req, res) => {
     try {
         const { appId, applicationType } = req.body;
@@ -68,12 +73,16 @@ export const uploadRevision = async (req, res) => {
 
         if (!application.documents) application.documents = [];
 
+        // Save files as base64 in database (not as file paths)
         req.files.forEach(file => {
             application.documents.push({
                 requirementName: "Revised Checklist/Documents",
                 fileName: file.originalname,
-                filePath: `/uploads/documents/${file.filename}`,
+                fileContent: fileToBase64(file),
+                mimeType: file.mimetype,
+                fileSize: file.size,
                 uploadedAt: new Date(),
+                uploadedBy: 'user',
                 status: "Pending"
             });
         });
