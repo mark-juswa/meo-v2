@@ -104,7 +104,7 @@ export default function DocumentChecklist({ app, role, onUpdate }) {
                 <span className="font-medium text-sm text-gray-700">{doc.requirementName}</span>
             </div>
             <button 
-              onClick={() => handleViewDocument(i)}
+              onClick={() => handleViewDocument(uploadedDocs.indexOf(doc))}
               className="text-xs font-medium text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-1 rounded-md border-none cursor-pointer"
             >
               View

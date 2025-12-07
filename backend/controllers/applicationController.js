@@ -680,7 +680,15 @@ export const serveFileFromDatabase = async (req, res) => {
         }
 
         // Get the document
-        const document = application.documents[parseInt(documentIndex)];
+        const docIndex = parseInt(documentIndex);
+        if (isNaN(docIndex) || docIndex < 0 || docIndex >= application.documents.length) {
+            return res.status(404).json({ 
+                message: 'Document not found',
+                details: `Invalid document index: ${documentIndex}. Available documents: ${application.documents.length}`
+            });
+        }
+        
+        const document = application.documents[docIndex];
         if (!document) {
             return res.status(404).json({ message: 'Document not found' });
         }
