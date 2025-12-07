@@ -1,6 +1,17 @@
-import nodemailer from "nodemailer";
+// SENDGRID EMAIL SERVICE USING HTTP API (not SMTP)
+// Render blocks all SMTP ports, so we use SendGrid's HTTP API instead
+// SendGrid is more reliable on cloud platforms and has a free tier (100 emails/day)
 
-// BACKUP EMAIL SERVICE USING SENDGRID
+import sgMail from '@sendgrid/mail';
+
+// SendGrid HTTP API Configuration
+// To use this:
+// 1. Sign up at https://sendgrid.com (free tier)
+// 2. Verify sender email
+// 3. Create an API key
+// 4. Add to Render environment variables:
+//    SENDGRID_API_KEY=your_api_key
+//    SENDGRID_FROM_EMAIL=your-verified-sender@yourdomain.com
 
 export const sendVerificationEmail = async (to, token) => {
   try {
@@ -11,32 +22,24 @@ export const sendVerificationEmail = async (to, token) => {
       throw new Error("SendGrid configuration missing. Please check your environment variables.");
     }
 
+    if (!process.env.SENDGRID_FROM_EMAIL) {
+      console.error("❌ SENDGRID_FROM_EMAIL missing!");
+      throw new Error("SendGrid FROM email is required. Please set SENDGRID_FROM_EMAIL environment variable.");
+    }
+
+    // Set SendGrid API key
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
     const verifyUrl = `${process.env.CLIENT_URL}/verify-email/${token}`;
-    console.log("SendGrid - Email sent token:", token);
-    console.log("SendGrid - Verify URL:", verifyUrl);
-    console.log("SendGrid - To recipient:", to);
+    console.log("📧 SendGrid HTTP API - Sending verification email");
+    console.log("Token:", token);
+    console.log("Verify URL:", verifyUrl);
+    console.log("To recipient:", to);
+    console.log("From:", process.env.SENDGRID_FROM_EMAIL);
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp.sendgrid.net",
-      port: 587,
-      secure: false,
-      auth: {
-        user: "apikey", 
-        pass: process.env.SENDGRID_API_KEY,
-      },
-      connectionTimeout: 60000,
-      greetingTimeout: 60000,
-      socketTimeout: 60000,
-      debug: true,
-    });
-
-    console.log("SendGrid - Verifying SMTP connection...");
-    await transporter.verify();
-    console.log("SendGrid - SMTP connection verified successfully!");
-
-    const mailOptions = {
-      from: process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_USERNAME,
+    const msg = {
       to,
+      from: process.env.SENDGRID_FROM_EMAIL,
       subject: "Verify Your Email - MEO Online Services",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
@@ -74,16 +77,20 @@ export const sendVerificationEmail = async (to, token) => {
       `,
     };
 
-    console.log("SendGrid - Sending email...");
-    const info = await transporter.sendMail(mailOptions);
-    console.log("SendGrid - Verification email sent successfully:", info.messageId);
-    console.log("SendGrid - Response:", info.response);
-    return { success: true, messageId: info.messageId };
+    console.log("📤 Sending email via SendGrid HTTP API...");
+    const response = await sgMail.send(msg);
+    console.log("✅ SendGrid - Verification email sent successfully!");
+    console.log("Response status:", response[0].statusCode);
+    console.log("Response headers:", response[0].headers);
+    
+    return { success: true, statusCode: response[0].statusCode };
     
   } catch (error) {
-    console.error("SendGrid - Failed to send verification email:", error.message);
-    console.error("SendGrid - Error code:", error.code);
-    console.error("SendGrid - Full error:", error);
+    console.error("❌ SendGrid - Failed to send verification email");
+    console.error("Error message:", error.message);
+    console.error("Error code:", error.code);
+    console.error("Error response body:", error.response?.body);
+    console.error("Full error:", error);
     throw new Error(`SendGrid email sending failed: ${error.message}`);
   }
 };
@@ -91,34 +98,27 @@ export const sendVerificationEmail = async (to, token) => {
 export const sendPasswordResetEmail = async (to, token) => {
   try {
     if (!process.env.SENDGRID_API_KEY || !process.env.CLIENT_URL) {
+      console.error("❌ SENDGRID_API_KEY or CLIENT_URL missing!");
       throw new Error("SendGrid configuration missing.");
     }
 
+    if (!process.env.SENDGRID_FROM_EMAIL) {
+      console.error("❌ SENDGRID_FROM_EMAIL missing!");
+      throw new Error("SendGrid FROM email is required.");
+    }
+
+    // Set SendGrid API key
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${token}`;
-    console.log("SendGrid - Attempting to send password reset email");
-    console.log("SendGrid - To recipient:", to);
+    console.log("📧 SendGrid HTTP API - Sending password reset email");
+    console.log("To recipient:", to);
+    console.log("Reset URL:", resetUrl);
+    console.log("From:", process.env.SENDGRID_FROM_EMAIL);
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp.sendgrid.net",
-      port: 587,
-      secure: false,
-      auth: {
-        user: "apikey",
-        pass: process.env.SENDGRID_API_KEY,
-      },
-      connectionTimeout: 60000,
-      greetingTimeout: 60000,
-      socketTimeout: 60000,
-      debug: true,
-    });
-
-    console.log("SendGrid - Verifying SMTP connection...");
-    await transporter.verify();
-    console.log("SendGrid - SMTP connection verified successfully!");
-
-    const mailOptions = {
-      from: process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_USERNAME,
+    const msg = {
       to,
+      from: process.env.SENDGRID_FROM_EMAIL,
       subject: "Reset Your Password - MEO Online Services",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
@@ -134,21 +134,32 @@ export const sendPasswordResetEmail = async (to, token) => {
             </div>
             
             <p style="color: #666; font-size: 14px;">This link expires in 1 hour.</p>
-            <p style="color: #666; font-size: 14px;">If you didn't ask for this, verify your account security immediately.</p>
+            <p style="color: #666; font-size: 14px;">If you didn't ask for this, please verify your account security immediately.</p>
+            
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            
+            <p style="color: #999; font-size: 12px; text-align: center;">
+              MEO Online Services<br>
+              San Vicente, Palawan
+            </p>
           </div>
         </div>
       `,
     };
 
-    console.log("SendGrid - Sending password reset email...");
-    const info = await transporter.sendMail(mailOptions);
-    console.log("SendGrid - Password reset email sent successfully:", info.messageId);
-    console.log("SendGrid - Response:", info.response);
-    return { success: true, messageId: info.messageId };
+    console.log("📤 Sending password reset email via SendGrid HTTP API...");
+    const response = await sgMail.send(msg);
+    console.log("✅ SendGrid - Password reset email sent successfully!");
+    console.log("Response status:", response[0].statusCode);
+    
+    return { success: true, statusCode: response[0].statusCode };
+    
   } catch (error) {
-    console.error("SendGrid - Failed to send reset email:", error.message);
-    console.error("SendGrid - Error code:", error.code);
-    console.error("SendGrid - Full error:", error);
+    console.error("❌ SendGrid - Failed to send reset email");
+    console.error("Error message:", error.message);
+    console.error("Error code:", error.code);
+    console.error("Error response body:", error.response?.body);
+    console.error("Full error:", error);
     throw new Error(`SendGrid email sending failed: ${error.message}`);
   }
 };
