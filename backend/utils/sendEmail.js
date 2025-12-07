@@ -9,6 +9,8 @@ export const sendVerificationEmail = async (to, token) => {
     const verifyUrl = `${process.env.CLIENT_URL}/verify-email/${token}`;
     console.log("Email sent token:", token);
     console.log("Verify URL:", verifyUrl);
+    console.log("Attempting to send email from:", process.env.EMAIL_USERNAME);
+    console.log("To recipient:", to);
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -25,7 +27,13 @@ export const sendVerificationEmail = async (to, token) => {
       connectionTimeout: 30000, // 30 seconds
       greetingTimeout: 30000,
       socketTimeout: 30000,
+      debug: true, // Enable debug output
     });
+
+    // Verify transporter configuration
+    console.log("Verifying SMTP connection...");
+    await transporter.verify();
+    console.log("SMTP connection verified successfully!");
 
     const mailOptions = {
       from: `"MEO Online Services" <${process.env.EMAIL_USERNAME}>`,
@@ -67,12 +75,17 @@ export const sendVerificationEmail = async (to, token) => {
       `,
     };
 
+    console.log("Sending email...");
     const info = await transporter.sendMail(mailOptions);
     console.log("Verification email sent successfully:", info.messageId);
+    console.log("Response:", info.response);
     return { success: true, messageId: info.messageId };
     
   } catch (error) {
     console.error("Failed to send verification email:", error.message);
+    console.error("Error code:", error.code);
+    console.error("Error command:", error.command);
+    console.error("Full error:", error);
     throw new Error(`Email sending failed: ${error.message}`);
   }
 };
@@ -88,6 +101,8 @@ export const sendPasswordResetEmail = async (to, token) => {
 
     // This URL points to your Frontend Route
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${token}`;
+    console.log("Attempting to send password reset email from:", process.env.EMAIL_USERNAME);
+    console.log("To recipient:", to);
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -104,7 +119,13 @@ export const sendPasswordResetEmail = async (to, token) => {
       connectionTimeout: 30000, // 30 seconds
       greetingTimeout: 30000,
       socketTimeout: 30000,
+      debug: true, // Enable debug output
     });
+
+    // Verify transporter configuration
+    console.log("Verifying SMTP connection...");
+    await transporter.verify();
+    console.log("SMTP connection verified successfully!");
 
     const mailOptions = {
       from: `"MEO Online Services" <${process.env.EMAIL_USERNAME}>`,
@@ -130,11 +151,16 @@ export const sendPasswordResetEmail = async (to, token) => {
       `,
     };
 
-    await transporter.sendMail(mailOptions);
-    console.log("Password reset email sent.");
-    return { success: true };
+    console.log("Sending password reset email...");
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Password reset email sent successfully:", info.messageId);
+    console.log("Response:", info.response);
+    return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error("Failed to send reset email:", error.message);
+    console.error("Error code:", error.code);
+    console.error("Error command:", error.command);
+    console.error("Full error:", error);
     throw new Error(`Email sending failed: ${error.message}`);
   }
 };

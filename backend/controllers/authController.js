@@ -253,10 +253,17 @@ export const forgotPassword = async (req, res) => {
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
     await user.save();
 
-    // Send Email
-    await sendPasswordResetEmail(user.email, resetToken);
-
-    res.status(200).json({ message: "Reset link sent to your email." });
+    // Send Email with error handling
+    try {
+      await sendPasswordResetEmail(user.email, resetToken);
+      res.status(200).json({ message: "Reset link sent to your email." });
+    } catch (emailError) {
+      console.error("Forgot password - Email sending error:", emailError);
+      res.status(200).json({ 
+        message: "Password reset token generated, but we couldn't send the email. Please contact support with your email address.",
+        emailError: true
+      });
+    }
   } catch (error) {
     console.error("Forgot password error:", error);
     res.status(500).json({ message: "Server error" });
@@ -327,9 +334,16 @@ export const resendVerification = async (req, res) => {
 
     //console.log("Resend verification token:", verificationToken, "expiresAt:", expiresAt);
 
-    await sendVerificationEmail(user.email, verificationToken);
-
-    return res.status(200).json({ message: "A new verification email has been sent. Please check your inbox." });
+    try {
+      await sendVerificationEmail(user.email, verificationToken);
+      return res.status(200).json({ message: "A new verification email has been sent. Please check your inbox." });
+    } catch (emailError) {
+      console.error("Resend verification - Email sending error:", emailError);
+      return res.status(200).json({ 
+        message: "We couldn't send the verification email. Please try again later or contact support.",
+        emailError: true
+      });
+    }
   } catch (error) {
     console.error("Resend verification error:", error);
     return res.status(500).json({ message: "Server error" });
