@@ -36,7 +36,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "http://localhost:5174",
-      "https://svmeo-online-services.onrender.com"
+      "https://meo-sv.onrender.com"
     ],
     credentials: true,
   })
@@ -57,7 +57,7 @@ app.use((req, res, next) => {
         http://localhost:5173
         http://localhost:5174
         https://meo-online-services.onrender.com
-        https://svmeo-online-services.onrender.com
+        https://meo-sv.onrender.com
         https://www.google-analytics.com;
     frame-src 'self';
     object-src 'none';
