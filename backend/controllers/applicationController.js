@@ -660,6 +660,12 @@ export const downloadApplicationPDF = async (req, res) => {
 export const serveFileFromDatabase = async (req, res) => {
     try {
         const { applicationId, documentIndex } = req.params;
+        
+        console.log('=== serveFileFromDatabase called ===');
+        console.log('Application ID:', applicationId);
+        console.log('Document Index:', documentIndex);
+        console.log('User ID:', req.user.userId);
+        console.log('User Role:', req.user.role);
 
         // Find the application
         let application = await BuildingApplication.findById(applicationId);
@@ -668,20 +674,28 @@ export const serveFileFromDatabase = async (req, res) => {
         }
 
         if (!application) {
+            console.error('Application not found for ID:', applicationId);
             return res.status(404).json({ message: 'Application not found' });
         }
+
+        console.log('Application found:', application._id);
+        console.log('Total documents:', application.documents.length);
 
         // Check if user owns this application or is admin
         const isOwner = application.applicant.toString() === req.user.userId;
         const isAdmin = ['meoadmin', 'bfpadmin', 'mayoradmin'].includes(req.user.role);
         
         if (!isOwner && !isAdmin) {
+            console.error('Unauthorized access attempt by user:', req.user.userId);
             return res.status(403).json({ message: 'Unauthorized access' });
         }
 
         // Get the document
         const docIndex = parseInt(documentIndex);
+        console.log('Parsed document index:', docIndex);
+        
         if (isNaN(docIndex) || docIndex < 0 || docIndex >= application.documents.length) {
+            console.error('Invalid document index:', documentIndex, 'Available:', application.documents.length);
             return res.status(404).json({ 
                 message: 'Document not found',
                 details: `Invalid document index: ${documentIndex}. Available documents: ${application.documents.length}`
@@ -690,10 +704,16 @@ export const serveFileFromDatabase = async (req, res) => {
         
         const document = application.documents[docIndex];
         if (!document) {
+            console.error('Document is null at index:', docIndex);
             return res.status(404).json({ message: 'Document not found' });
         }
 
+        console.log('Document found:', document.fileName);
+        console.log('Has fileContent:', !!document.fileContent);
+        console.log('Has filePath:', !!document.filePath);
+
         if (document.fileContent && document.mimeType) {
+            console.log('Serving from base64 content');
             const buffer = Buffer.from(document.fileContent, 'base64');
             
             res.setHeader('Content-Type', document.mimeType);
@@ -705,16 +725,21 @@ export const serveFileFromDatabase = async (req, res) => {
 
         if (document.filePath) {
             const filePath = path.join(__dirname, '..', document.filePath);
+            console.log('Attempting to serve from file path:', filePath);
             if (fs.existsSync(filePath)) {
+                console.log('File exists, sending...');
                 return res.sendFile(filePath);
+            } else {
+                console.error('File does not exist at path:', filePath);
             }
         }
 
+        console.error('No file content or path available');
         return res.status(404).json({ message: 'File content not found' });
 
     } catch (error) {
         console.error('Error serving file from database:', error);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
 

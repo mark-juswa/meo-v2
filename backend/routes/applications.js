@@ -69,26 +69,26 @@ router.post(
     uploadSupportingDocuments
 );
 
-// Download application PDF (Admin only)
-router.get(
-    '/:id/download-pdf',
-    verifyToken,
-    verifyRole(['meoadmin', 'bfpadmin', 'mayoradmin']),
-    downloadApplicationPDF
-);
-
-// Saves document file in database
+// Saves document file in database 
 router.get(
     '/:applicationId/documents/:documentIndex/file',
     verifyToken,
     serveFileFromDatabase
 );
 
-// Saves payment proof in database
+// Saves payment proof in database 
 router.get(
     '/:applicationId/payment-proof',
     verifyToken,
     servePaymentProofFromDatabase
+);
+
+// Download application PDF (Admin only)
+router.get(
+    '/:id/download-pdf',
+    verifyToken,
+    verifyRole(['meoadmin', 'bfpadmin', 'mayoradmin']),
+    downloadApplicationPDF
 );
 
 

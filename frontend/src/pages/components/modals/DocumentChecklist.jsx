@@ -37,6 +37,15 @@ export default function DocumentChecklist({ app, role, onUpdate }) {
 
   const handleViewDocument = async (documentIndex) => {
     try {
+      console.log('=== DEBUG: handleViewDocument called ===');
+      console.log('Document Index:', documentIndex);
+      console.log('App object:', app);
+      console.log('App._id:', app._id);
+      console.log('App._id type:', typeof app._id);
+      console.log('App._id length:', app._id?.length);
+      console.log('Total documents:', uploadedDocs.length);
+      console.log('Document at index:', uploadedDocs[documentIndex]);
+      
       // Validate app._id exists and is complete
       if (!app._id || app._id.length < 24) {
         console.error('Invalid application ID:', app._id);
@@ -45,8 +54,16 @@ export default function DocumentChecklist({ app, role, onUpdate }) {
         return;
       }
 
+      // Validate document index
+      if (documentIndex < 0 || documentIndex >= uploadedDocs.length) {
+        console.error('Invalid document index:', documentIndex, 'Total docs:', uploadedDocs.length);
+        alert(`Invalid document index: ${documentIndex}. Please try again.`);
+        return;
+      }
+
       const url = `/api/applications/${app._id}/documents/${documentIndex}/file`;
-      console.log('Fetching document from URL:', url);
+      console.log('Constructed URL:', url);
+      console.log('Making request to:', url);
       
       const response = await axiosPrivate.get(url, {
         responseType: 'blob'
@@ -61,6 +78,7 @@ export default function DocumentChecklist({ app, role, onUpdate }) {
     } catch (error) {
       console.error('Error viewing document:', error);
       console.error('App ID:', app._id, 'Document Index:', documentIndex);
+      console.error('Error details:', error.response?.data);
       alert('Failed to load document. Please try again.');
     }
   };
