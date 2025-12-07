@@ -37,18 +37,30 @@ export default function DocumentChecklist({ app, role, onUpdate }) {
 
   const handleViewDocument = async (documentIndex) => {
     try {
-      const response = await axiosPrivate.get(`/api/applications/${app._id}/documents/${documentIndex}/file`, {
+      // Validate app._id exists and is complete
+      if (!app._id || app._id.length < 24) {
+        console.error('Invalid application ID:', app._id);
+        console.error('Full app object:', app);
+        alert(`Invalid application ID: ${app._id}. Please refresh the page and try again.`);
+        return;
+      }
+
+      const url = `/api/applications/${app._id}/documents/${documentIndex}/file`;
+      console.log('Fetching document from URL:', url);
+      
+      const response = await axiosPrivate.get(url, {
         responseType: 'blob'
       });
       
       const contentType = response.headers['content-type'] || 'application/octet-stream';
       const blob = new Blob([response.data], { type: contentType });
-      const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
+      const blobUrl = window.URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
       
-      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
     } catch (error) {
       console.error('Error viewing document:', error);
+      console.error('App ID:', app._id, 'Document Index:', documentIndex);
       alert('Failed to load document. Please try again.');
     }
   };
@@ -66,7 +78,7 @@ export default function DocumentChecklist({ app, role, onUpdate }) {
 
   const handleRemoveMissingItem = (itemToRemove) => {
     const updated = missingDocs.filter((i) => i !== itemToRemove);
-    t
+    
     const lastRejection = app.workflowHistory?.slice().reverse().find(h => h.status === 'Rejected');
     const isBfpRejection = lastRejection?.comments?.toLowerCase().includes('bfp');
     
@@ -82,8 +94,10 @@ export default function DocumentChecklist({ app, role, onUpdate }) {
     });
   };
 
-  const revisions = uploadedDocs.filter(d => d.requirementName === 'Revised Checklist/Documents');
-  const standardDocs = uploadedDocs.filter(d => d.requirementName !== 'Revised Checklist/Documents');
+  // Create arrays with original indices preserved
+  const docsWithIndices = uploadedDocs.map((doc, index) => ({ doc, originalIndex: index }));
+  const revisions = docsWithIndices.filter(d => d.doc.requirementName === 'Revised Checklist/Documents');
+  const standardDocs = docsWithIndices.filter(d => d.doc.requirementName !== 'Revised Checklist/Documents');
 
   return (
     <div>
@@ -97,14 +111,14 @@ export default function DocumentChecklist({ app, role, onUpdate }) {
             No original documents found.
           </p>
         )}
-        {standardDocs.map((doc, i) => (
+        {standardDocs.map((item, i) => (
           <div key={i} className="flex justify-between items-center p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 transition">
             <div className="flex items-center">
                 <DocumentTextIcon className="w-5 h-5 text-gray-400 mr-3"/>
-                <span className="font-medium text-sm text-gray-700">{doc.requirementName}</span>
+                <span className="font-medium text-sm text-gray-700">{item.doc.requirementName}</span>
             </div>
             <button 
-              onClick={() => handleViewDocument(uploadedDocs.indexOf(doc))}
+              onClick={() => handleViewDocument(item.originalIndex)}
               className="text-xs font-medium text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-1 rounded-md border-none cursor-pointer"
             >
               View
@@ -156,17 +170,17 @@ export default function DocumentChecklist({ app, role, onUpdate }) {
                     <span className="text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded-full border border-green-200">Latest</span>
                 </div>
                 <div className="space-y-2">
-                    {revisions.map((doc, i) => (
+                    {revisions.map((item, i) => (
                         <div key={i} className="flex justify-between items-center bg-white p-3 rounded border border-green-100 shadow-sm">
                             <div>
                                 <p className="text-sm font-semibold text-gray-800 flex items-center">
                                   <DocumentTextIcon className="w-4 h-4 text-green-600 mr-2"/>
-                                  {doc.fileName || doc.requirementName}
+                                  {item.doc.fileName || item.doc.requirementName}
                                 </p>
-                                <p className="text-xs text-gray-500 ml-6">Uploaded: {new Date(doc.uploadedAt).toLocaleString()}</p>
+                                <p className="text-xs text-gray-500 ml-6">Uploaded: {new Date(item.doc.uploadedAt).toLocaleString()}</p>
                             </div>
                             <button 
-                                onClick={() => handleViewDocument(uploadedDocs.indexOf(doc))} 
+                                onClick={() => handleViewDocument(item.originalIndex)} 
                                 className="text-xs font-bold text-green-700 hover:underline flex items-center bg-transparent border-none cursor-pointer"
                             >
                                 <ArrowDownTrayIcon className="w-3 h-3 mr-1"/> View File
