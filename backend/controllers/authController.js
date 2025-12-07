@@ -12,19 +12,19 @@ export const register = async (req, res) => {
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ message: "User already exists" });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
     const verificationToken = crypto.randomBytes(32).toString("hex");
     console.log("Generated token (register):", verificationToken);
 
     // Store expiry explicitly as a Date
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
+    // Don't hash password here - the User model's pre-save hook will do it
     const newUser = new User({
       username,
       first_name,
       last_name,
       email,
-      password: hashedPassword,
+      password: password, // Plain password - will be hashed by model
       phone_number,
       role,
       isVerified: false,
@@ -79,20 +79,9 @@ export const login = async (req, res) => {
 
         console.log("✅ User found:", user.email);
         console.log("User verified:", user.isVerified);
-        console.log("Stored password hash:", user.password);
-        console.log("Stored password hash length:", user.password.length);
-        console.log("Password hash starts with $2a or $2b:", user.password.startsWith('$2a') || user.password.startsWith('$2b'));
-        console.log("Input password:", password);
-        console.log("Input password length:", password.length);
 
         const isMatch = await bcrypt.compare(password, user.password);
         console.log("Password match:", isMatch);
-        
-        // Test: Try hashing the input password and compare
-        const testHash = await bcrypt.hash(password, 10);
-        console.log("Test hash of input password:", testHash);
-        const testMatch = await bcrypt.compare(password, testHash);
-        console.log("Test match (should be true):", testMatch);
         
         if (!isMatch) {
             console.log("❌ Password does not match");
@@ -314,10 +303,8 @@ export const resetPassword = async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired reset token" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Update user
-    user.password = hashedPassword;
+    // Don't hash password here - the User model's pre-save hook will do it
+    user.password = password; // Plain password - will be hashed by model
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();
