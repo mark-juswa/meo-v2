@@ -2,9 +2,12 @@ import nodemailer from "nodemailer";
 
 // BACKUP EMAIL SERVICE USING SENDGRID
 
-export const sendVerificationEmailSendGrid = async (to, token) => {
+export const sendVerificationEmail = async (to, token) => {
   try {
     if (!process.env.SENDGRID_API_KEY || !process.env.CLIENT_URL) {
+      console.error("❌ SENDGRID_API_KEY or CLIENT_URL missing!");
+      console.error("SENDGRID_API_KEY exists:", !!process.env.SENDGRID_API_KEY);
+      console.error("CLIENT_URL exists:", !!process.env.CLIENT_URL);
       throw new Error("SendGrid configuration missing. Please check your environment variables.");
     }
 
@@ -85,7 +88,7 @@ export const sendVerificationEmailSendGrid = async (to, token) => {
   }
 };
 
-export const sendPasswordResetEmailSendGrid = async (to, token) => {
+export const sendPasswordResetEmail = async (to, token) => {
   try {
     if (!process.env.SENDGRID_API_KEY || !process.env.CLIENT_URL) {
       throw new Error("SendGrid configuration missing.");

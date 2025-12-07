@@ -2,7 +2,8 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { sendVerificationEmail, sendPasswordResetEmail } from "../utils/sendEmail.js";
+// Using SendGrid instead of Gmail (Render blocks SMTP ports)
+import { sendVerificationEmail, sendPasswordResetEmail } from '../utils/sendEmailSendGrid.js';
 
 export const register = async (req, res) => {
   const { username, first_name, last_name, email, password, phone_number, role } = req.body;
