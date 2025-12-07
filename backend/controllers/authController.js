@@ -61,27 +61,42 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
     const { email, password } = req.body;
 
+    console.log("=== LOGIN ATTEMPT ===");
+    console.log("Email:", email);
+    console.log("Password provided:", !!password);
+
     if (!email || !password) {
+        console.log("❌ Missing email or password");
         return res.status(400).json({ message: "Please provide email and password" });
     }
 
     try {
         const user = await User.findOne({ email });
         if (!user) {
+            console.log("❌ User not found with email:", email);
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
+        console.log("✅ User found:", user.email);
+        console.log("User verified:", user.isVerified);
+
         const isMatch = await bcrypt.compare(password, user.password);
+        console.log("Password match:", isMatch);
+        
         if (!isMatch) {
+            console.log("❌ Password does not match");
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
         if (!user.isVerified) {
+            console.log("❌ User not verified");
             return res.status(403).json({ 
                 message: "Please verify your email before logging in. If you didn't receive the verification email, please use the 'Resend Verification Email' option on the login page.",
                 requiresVerification: true
             });
         }
+
+        console.log("✅ Login successful for:", user.email);
 
         const accessToken = jwt.sign(
             { 
