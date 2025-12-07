@@ -68,15 +68,27 @@ const userSchema = mongoose.Schema(
 
 // Hash password before saving
 userSchema.pre("save", async function (next) {
+  console.log("=== PRE-SAVE HOOK TRIGGERED ===");
+  console.log("Password modified:", this.isModified("password"));
+  console.log("Current password value:", this.password);
+  console.log("Password length:", this.password?.length);
+  
   if (!this.isModified("password")) {
+    console.log("Password not modified, skipping hash");
     return next();
   }
   
   try {
+    console.log("Hashing password...");
     const salt = await bcrypt.genSalt(10);
+    const originalPassword = this.password;
     this.password = await bcrypt.hash(this.password, salt);
+    console.log("Password hashed successfully!");
+    console.log("Original password:", originalPassword);
+    console.log("Hashed password:", this.password);
     next();
   } catch (error) {
+    console.error("Error in pre-save hook:", error);
     next(error);
   }
 });
