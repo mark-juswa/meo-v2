@@ -20,12 +20,11 @@ export const sendVerificationEmail = async (to, token) => {
         pass: process.env.EMAIL_PASSWORD,
       },
       tls: {
-        rejectUnauthorized: false, // Accept self-signed certificates (for compatibility)
-        ciphers: 'SSLv3'
+        rejectUnauthorized: false
       },
-      connectionTimeout: 10000, // 10 seconds
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
+      connectionTimeout: 30000, // 30 seconds
+      greetingTimeout: 30000,
+      socketTimeout: 30000,
     });
 
     const mailOptions = {
@@ -100,12 +99,11 @@ export const sendPasswordResetEmail = async (to, token) => {
         pass: process.env.EMAIL_PASSWORD,
       },
       tls: {
-        rejectUnauthorized: false, // Accept self-signed certificates (for compatibility)
-        ciphers: 'SSLv3'
+        rejectUnauthorized: false
       },
-      connectionTimeout: 10000, // 10 seconds
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
+      connectionTimeout: 30000, // 30 seconds
+      greetingTimeout: 30000,
+      socketTimeout: 30000,
     });
 
     const mailOptions = {

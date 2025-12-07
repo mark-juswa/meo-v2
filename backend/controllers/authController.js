@@ -76,7 +76,10 @@ export const login = async (req, res) => {
         }
 
         if (!user.isVerified) {
-            return res.status(403).json({ message: "Please verify your email before logging in." });
+            return res.status(403).json({ 
+                message: "Please verify your email before logging in. If you didn't receive the verification email, please use the 'Resend Verification Email' option on the login page.",
+                requiresVerification: true
+            });
         }
 
         const accessToken = jwt.sign(
