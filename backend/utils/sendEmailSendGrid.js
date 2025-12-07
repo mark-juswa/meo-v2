@@ -1,40 +1,38 @@
 import nodemailer from "nodemailer";
 
-export const sendVerificationEmail = async (to, token) => {
+// BACKUP EMAIL SERVICE USING SENDGRID
+
+export const sendVerificationEmailSendGrid = async (to, token) => {
   try {
-    if (!process.env.EMAIL_USERNAME || !process.env.EMAIL_PASSWORD || !process.env.CLIENT_URL) {
-      throw new Error("Email configuration missing. Please check your environment variables.");
+    if (!process.env.SENDGRID_API_KEY || !process.env.CLIENT_URL) {
+      throw new Error("SendGrid configuration missing. Please check your environment variables.");
     }
 
     const verifyUrl = `${process.env.CLIENT_URL}/verify-email/${token}`;
-    console.log("Email sent token:", token);
-    console.log("Verify URL:", verifyUrl);
-    console.log("Attempting to send email from:", process.env.EMAIL_USERNAME);
-    console.log("To recipient:", to);
+    console.log("SendGrid - Email sent token:", token);
+    console.log("SendGrid - Verify URL:", verifyUrl);
+    console.log("SendGrid - To recipient:", to);
 
-    // Use port 465 with SSL (port 587 is blocked by Render)
     const transporter = nodemailer.createTransport({
-      service: "gmail",
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true, // SSL for port 465
+      host: "smtp.sendgrid.net",
+      port: 587,
+      secure: false,
       auth: {
-        user: process.env.EMAIL_USERNAME,
-        pass: process.env.EMAIL_PASSWORD,
+        user: "apikey", 
+        pass: process.env.SENDGRID_API_KEY,
       },
-      connectionTimeout: 60000, // 60 seconds
+      connectionTimeout: 60000,
       greetingTimeout: 60000,
       socketTimeout: 60000,
-      debug: true, // Enable debug output
+      debug: true,
     });
 
-    // Verify transporter configuration
-    console.log("Verifying SMTP connection on port 465 (SSL)...");
+    console.log("SendGrid - Verifying SMTP connection...");
     await transporter.verify();
-    console.log("SMTP connection verified successfully!");
+    console.log("SendGrid - SMTP connection verified successfully!");
 
     const mailOptions = {
-      from: `"MEO Online Services" <${process.env.EMAIL_USERNAME}>`,
+      from: process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_USERNAME,
       to,
       subject: "Verify Your Email - MEO Online Services",
       html: `
@@ -73,58 +71,50 @@ export const sendVerificationEmail = async (to, token) => {
       `,
     };
 
-    console.log("Sending email...");
+    console.log("SendGrid - Sending email...");
     const info = await transporter.sendMail(mailOptions);
-    console.log("Verification email sent successfully:", info.messageId);
-    console.log("Response:", info.response);
+    console.log("SendGrid - Verification email sent successfully:", info.messageId);
+    console.log("SendGrid - Response:", info.response);
     return { success: true, messageId: info.messageId };
     
   } catch (error) {
-    console.error("Failed to send verification email:", error.message);
-    console.error("Error code:", error.code);
-    console.error("Error command:", error.command);
-    console.error("Full error:", error);
-    throw new Error(`Email sending failed: ${error.message}`);
+    console.error("SendGrid - Failed to send verification email:", error.message);
+    console.error("SendGrid - Error code:", error.code);
+    console.error("SendGrid - Full error:", error);
+    throw new Error(`SendGrid email sending failed: ${error.message}`);
   }
 };
 
-
-
-
-export const sendPasswordResetEmail = async (to, token) => {
+export const sendPasswordResetEmailSendGrid = async (to, token) => {
   try {
-    if (!process.env.EMAIL_USERNAME || !process.env.EMAIL_PASSWORD || !process.env.CLIENT_URL) {
-      throw new Error("Email configuration missing.");
+    if (!process.env.SENDGRID_API_KEY || !process.env.CLIENT_URL) {
+      throw new Error("SendGrid configuration missing.");
     }
 
-    // This URL points to your Frontend Route
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${token}`;
-    console.log("Attempting to send password reset email from:", process.env.EMAIL_USERNAME);
-    console.log("To recipient:", to);
+    console.log("SendGrid - Attempting to send password reset email");
+    console.log("SendGrid - To recipient:", to);
 
-    // Use port 465 with SSL (port 587 is blocked by Render)
     const transporter = nodemailer.createTransport({
-      service: "gmail",
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true, // SSL for port 465
+      host: "smtp.sendgrid.net",
+      port: 587,
+      secure: false,
       auth: {
-        user: process.env.EMAIL_USERNAME,
-        pass: process.env.EMAIL_PASSWORD,
+        user: "apikey",
+        pass: process.env.SENDGRID_API_KEY,
       },
-      connectionTimeout: 60000, // 60 seconds
+      connectionTimeout: 60000,
       greetingTimeout: 60000,
       socketTimeout: 60000,
-      debug: true, // Enable debug output
+      debug: true,
     });
 
-    // Verify transporter configuration
-    console.log("Verifying SMTP connection on port 465 (SSL)...");
+    console.log("SendGrid - Verifying SMTP connection...");
     await transporter.verify();
-    console.log("SMTP connection verified successfully!");
+    console.log("SendGrid - SMTP connection verified successfully!");
 
     const mailOptions = {
-      from: `"MEO Online Services" <${process.env.EMAIL_USERNAME}>`,
+      from: process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_USERNAME,
       to,
       subject: "Reset Your Password - MEO Online Services",
       html: `
@@ -147,16 +137,15 @@ export const sendPasswordResetEmail = async (to, token) => {
       `,
     };
 
-    console.log("Sending password reset email...");
+    console.log("SendGrid - Sending password reset email...");
     const info = await transporter.sendMail(mailOptions);
-    console.log("Password reset email sent successfully:", info.messageId);
-    console.log("Response:", info.response);
+    console.log("SendGrid - Password reset email sent successfully:", info.messageId);
+    console.log("SendGrid - Response:", info.response);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error("Failed to send reset email:", error.message);
-    console.error("Error code:", error.code);
-    console.error("Error command:", error.command);
-    console.error("Full error:", error);
-    throw new Error(`Email sending failed: ${error.message}`);
+    console.error("SendGrid - Failed to send reset email:", error.message);
+    console.error("SendGrid - Error code:", error.code);
+    console.error("SendGrid - Full error:", error);
+    throw new Error(`SendGrid email sending failed: ${error.message}`);
   }
 };
