@@ -14,7 +14,6 @@ export default function WorkflowModal({ role, app, onClose, onUpdate }) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [confirmProps, setConfirmProps] = useState({});
 
-  // local assessment data states — initialised from app if present
   const [assessmentData, setAssessmentData] = useState({
     box5: app.box5 || app.assessmentDetails || {},
     box6: app.box6 || app.feesDetails || { fees: [], totalAmountDue: 0 },
@@ -51,10 +50,26 @@ export default function WorkflowModal({ role, app, onClose, onUpdate }) {
   // Save assessment and move status (used by MEO)
   const saveAndPublishAssessment = () => {
     if (!app?._id) return;
+    
+    // Check if there are unresolved flags
+    const hasUnresolvedFlags = app.rejectionDetails?.missingDocuments?.length > 0;
+    
+    if (hasUnresolvedFlags) {
+      alert('Cannot publish assessment: There are unresolved flagged issues. Please resolve all flags in the "Details & Checklist" tab before publishing.');
+      return;
+    }
+    
+    // Clear rejection details and publish assessment
     onUpdate(app._id, 'Payment Pending', {
       box5: assessmentData.box5,
       box6: assessmentData.box6,
       comments: 'Assessment fees calculated and published for payment.',
+      // Clear rejection details
+      rejectionDetails: {
+        comments: '',
+        missingDocuments: [],
+        isResolved: true
+      }
     });
   };
 

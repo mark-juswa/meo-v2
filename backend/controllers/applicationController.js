@@ -415,12 +415,18 @@ export const updateApplicationStatus = async (req, res) => {
             };
         }
  
-        if (status === 'Submitted' || status === 'Pending MEO') {
+        // Clear rejection details when moving to these statuses
+        if (status === 'Submitted' || status === 'Pending MEO' || status === 'Payment Pending') {
              application.rejectionDetails = {
                 comments: '',
                 missingDocuments: [],
                 isResolved: true,
             };
+        }
+        
+        // If rejectionDetails is explicitly provided in the request body, use it
+        if (req.body.rejectionDetails) {
+            application.rejectionDetails = req.body.rejectionDetails;
         }
 
         
