@@ -205,9 +205,11 @@ export const submitBuildingApplication = async (req, res) => {
         const pdfPath = await generateFilledPDF({ box1, box2, box3, box4 }, savedApplication.referenceNo);
         
         if (pdfPath) {
+            // Extract the actual filename from the path
+            const actualFileName = path.basename(pdfPath);
             savedApplication.documents.push({
                 requirementName: 'Completed Application Form',
-                fileName: `Building_Application_${savedApplication.referenceNo}.pdf`,
+                fileName: actualFileName,
                 filePath: pdfPath,
                 uploadedAt: new Date(),
                 uploadedBy: 'system'
