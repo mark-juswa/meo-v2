@@ -78,8 +78,22 @@ export default function DocumentChecklist({ app, role, onUpdate }) {
     } catch (error) {
       console.error('Error viewing document:', error);
       console.error('App ID:', app._id, 'Document Index:', documentIndex);
-      console.error('Error details:', error.response?.data);
-      alert('Failed to load document. Please try again.');
+      
+      // Handle blob error responses properly
+      if (error.response?.data instanceof Blob) {
+        try {
+          const errorText = await error.response.data.text();
+          const errorJson = JSON.parse(errorText);
+          console.error('Error details:', errorJson);
+          alert(`Failed to load document: ${errorJson.message || 'Unknown error'}`);
+        } catch (parseError) {
+          console.error('Could not parse error response:', parseError);
+          alert('Failed to load document. Please try again.');
+        }
+      } else {
+        console.error('Error details:', error.response?.data || error.message);
+        alert(`Failed to load document: ${error.response?.data?.message || error.message || 'Unknown error'}`);
+      }
     }
   };
 
