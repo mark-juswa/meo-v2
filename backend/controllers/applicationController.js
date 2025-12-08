@@ -386,6 +386,45 @@ export const getAllApplications = async (req, res) => {
 };
 
 
+// HELPER: Generate final MEO-style permit number for issued permits
+async function generateFinalPermitNumber(applicationType) {
+    const now = new Date();
+    const year = String(now.getFullYear()).slice(-2);
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const yearMonth = year + month;
+
+    // Search across both application types to get the highest sequence number
+    const regex = new RegExp(`^${yearMonth}\\d{6}$`);
+    
+    const buildingPermits = await BuildingApplication
+        .find({ 'permit.permitNumber': regex })
+        .sort({ 'permit.permitNumber': -1 })
+        .limit(1)
+        .select('permit.permitNumber')
+        .lean();
+
+    const occupancyPermits = await OccupancyApplication
+        .find({ 'permit.permitNumber': regex })
+        .sort({ 'permit.permitNumber': -1 })
+        .limit(1)
+        .select('permit.permitNumber')
+        .lean();
+
+    let sequence = 1;
+    const allPermits = [...buildingPermits, ...occupancyPermits]
+        .map(p => p.permit?.permitNumber)
+        .filter(Boolean);
+
+    if (allPermits.length > 0) {
+        const sequences = allPermits.map(pn => parseInt(pn.slice(-6), 10));
+        sequence = Math.max(...sequences) + 1;
+    }
+
+    // Format: YYMM######
+    const sequenceStr = String(sequence).padStart(6, '0');
+    return `${yearMonth}${sequenceStr}`;
+}
+
 // LOGIC FOR UPDATING APPLICATION STATUS (ADMIN ONLY)
 export const updateApplicationStatus = async (req, res) => {
     try {
@@ -433,6 +472,16 @@ export const updateApplicationStatus = async (req, res) => {
         // Update Box 5 or Box 6 if provided (for MEO assessment)
         if (box5) application.box5 = box5;
         if (box6) application.box6 = box6;
+
+        // Generate final permit number when permit is issued
+        if (status === 'Permit Issued' && !application.permit?.permitNumber) {
+            const permitNumber = await generateFinalPermitNumber(application.applicationType);
+            application.permit = {
+                permitNumber: permitNumber,
+                issuedAt: new Date(),
+                issuedBy: adminUserId
+            };
+        }
 
         // Add to workflow history
         if (status) {

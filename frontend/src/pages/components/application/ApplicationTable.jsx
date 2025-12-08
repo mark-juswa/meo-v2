@@ -66,7 +66,16 @@ export default function ApplicationTable({
                     {displayedApplications.length > 0 ? (
                       displayedApplications.map((app) => (
                         <tr key={app._id} className="hover:bg-blue-50 transition duration-150">
-                          <Td medium>{app.referenceNo || 'N/A'}</Td>
+                          <Td medium>
+                            <div className="flex flex-col gap-1">
+                              <span>{app.referenceNo || 'N/A'}</span>
+                              {app.permit?.permitNumber && (
+                                <span className="text-xs font-mono text-green-700 bg-green-50 px-2 py-0.5 rounded inline-block w-fit">
+                                  Permit: {app.permit.permitNumber}
+                                </span>
+                              )}
+                            </div>
+                          </Td>
                           <Td>
                             {app.applicant
                               ? `${app.applicant?.first_name || ''} ${app.applicant?.last_name || ''}`
@@ -117,6 +126,11 @@ export default function ApplicationTable({
                         <div>
                           <p className="text-xs text-gray-500 uppercase tracking-wide">Reference No</p>
                           <p className="text-sm font-bold text-gray-900">{app.referenceNo || 'N/A'}</p>
+                          {app.permit?.permitNumber && (
+                            <p className="text-xs font-mono text-green-700 bg-green-50 px-2 py-1 rounded mt-1 inline-block">
+                              Permit: {app.permit.permitNumber}
+                            </p>
+                          )}
                         </div>
                         <StatusBadge status={app.status} />
                       </div>

@@ -2,7 +2,6 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-// Using SendGrid instead of Gmail (Render blocks SMTP ports)
 import { sendVerificationEmail, sendPasswordResetEmail } from '../utils/sendEmailSendGrid.js';
 
 export const register = async (req, res) => {
@@ -15,16 +14,14 @@ export const register = async (req, res) => {
     const verificationToken = crypto.randomBytes(32).toString("hex");
     console.log("Generated token (register):", verificationToken);
 
-    // Store expiry explicitly as a Date
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-    // Don't hash password here - the User model's pre-save hook will do it
     const newUser = new User({
       username,
       first_name,
       last_name,
       email,
-      password: password, // Plain password - will be hashed by model
+      password: password,
       phone_number,
       role,
       isVerified: false,
@@ -33,11 +30,6 @@ export const register = async (req, res) => {
     });
 
     await newUser.save();
-    //console.log("New user created. verificationToken:", verificationToken, "expiresAt:", expiresAt);
-    
-    //const savedUser = await User.findOne({ email });
-    //console.log("✅ User saved verification - Token in DB:", savedUser.verificationToken);
-    //console.log("✅ Token match:", savedUser.verificationToken === verificationToken);
 
     try {
       await sendVerificationEmail(email, verificationToken);
@@ -66,37 +58,37 @@ export const login = async (req, res) => {
     console.log("Password provided:", !!password);
 
     if (!email || !password) {
-        console.log("❌ Missing email or password");
+        console.log("Missing email or password");
         return res.status(400).json({ message: "Please provide email and password" });
     }
 
     try {
         const user = await User.findOne({ email });
         if (!user) {
-            console.log("❌ User not found with email:", email);
+            console.log("User not found with email:", email);
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
-        console.log("✅ User found:", user.email);
+        console.log("User found:", user.email);
         console.log("User verified:", user.isVerified);
 
         const isMatch = await bcrypt.compare(password, user.password);
         console.log("Password match:", isMatch);
         
         if (!isMatch) {
-            console.log("❌ Password does not match");
+            console.log("Password does not match");
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
         if (!user.isVerified) {
-            console.log("❌ User not verified");
+            console.log("User not verified");
             return res.status(403).json({ 
                 message: "Please verify your email before logging in. If you didn't receive the verification email, please use the 'Resend Verification Email' option on the login page.",
                 requiresVerification: true
             });
         }
 
-        console.log("✅ Login successful for:", user.email);
+        console.log("Login successful for:", user.email);
 
         const accessToken = jwt.sign(
             { 
@@ -220,13 +212,13 @@ export const verifyEmail = async (req, res) => {
     const user = await User.findOne({ verificationToken: token });
 
     if (!user) {
-      console.log("❌ No user found with that token.");
+      //console.log("No user found with that token.");
       return res.status(400).json({ 
         message: "This verification link has already been used. If you've already verified your account, please login. Otherwise, request a new verification email." 
       });
     }
 
-    console.log("✅ User found:", user.email);
+    //console.log("User found:", user.email);
 
     if (!user.verificationTokenExpires || user.verificationTokenExpires < Date.now()) {
       console.log("Token expired for user:", user.email);
@@ -303,8 +295,7 @@ export const resetPassword = async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired reset token" });
     }
 
-    // Don't hash password here - the User model's pre-save hook will do it
-    user.password = password; // Plain password - will be hashed by model
+    user.password = password; 
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();

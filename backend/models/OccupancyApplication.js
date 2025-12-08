@@ -144,14 +144,47 @@ const OccupancyApplicationSchema = new Schema(
       dateSubmitted: { type: Date },
       amountPaid: { type: Number }
     },
+
+    permit: {
+      permitNumber: { type: String },
+      issuedAt: { type: Date },
+      issuedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    },
   },
   { timestamps: true }
 );
 
 
+// HELPER: Generate MEO-style permit number (YYMM######)
+async function generateMEOPermitNumber(prefix) {
+  const now = new Date();
+  const year = String(now.getFullYear()).slice(-2); // Last 2 digits of year
+  const month = String(now.getMonth() + 1).padStart(2, '0'); // Month 01-12
+  const yearMonth = year + month; // e.g., "2501" for Jan 2025
+
+  // Find the last permit number for this month
+  const regex = new RegExp(`^${prefix}-${yearMonth}\\d{6}$`);
+  const lastApplication = await mongoose.model('OccupancyApplication')
+      .findOne({ referenceNo: regex })
+      .sort({ referenceNo: -1 })
+      .select('referenceNo')
+      .lean();
+
+  let sequence = 1;
+  if (lastApplication && lastApplication.referenceNo) {
+      // Extract the last 6 digits and increment
+      const lastSequence = parseInt(lastApplication.referenceNo.slice(-6), 10);
+      sequence = lastSequence + 1;
+  }
+
+  // Format: O-YYMM######
+  const sequenceStr = String(sequence).padStart(6, '0');
+  return `${prefix}-${yearMonth}${sequenceStr}`;
+}
+
 OccupancyApplicationSchema.pre('save', async function (next) {
   if (this.isNew && !this.referenceNo) {
-    this.referenceNo = `O-${Date.now()}`;
+    this.referenceNo = await generateMEOPermitNumber('O');
   }
   next();
 });

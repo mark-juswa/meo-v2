@@ -71,6 +71,15 @@ const PermitDashboard = ({ application }) => {
                 <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-1">{t.refCardTitle}</p>
                 <div className="text-3xl font-mono font-black text-gray-800 tracking-widest">{application.referenceNo}</div>
             </div>
+            
+            {/* Display Permit Number if Issued */}
+            {application.permit?.permitNumber && (
+              <div className="mt-4 bg-green-50 border-2 border-green-400 rounded-xl p-4 text-center">
+                <p className="text-xs text-green-700 uppercase tracking-wide font-semibold mb-1">BLDG. PERMIT NO.</p>
+                <div className="text-3xl font-mono font-black text-green-800 tracking-widest">{application.permit.permitNumber}</div>
+                <p className="text-xs text-gray-600 mt-2">Issued: {new Date(application.permit.issuedAt).toLocaleDateString()}</p>
+              </div>
+            )}
           </div>
         </div>
 

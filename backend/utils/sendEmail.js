@@ -12,12 +12,11 @@ export const sendVerificationEmail = async (to, token) => {
     console.log("Attempting to send email from:", process.env.EMAIL_USERNAME);
     console.log("To recipient:", to);
 
-    // Use port 465 with SSL (port 587 is blocked by Render)
     const transporter = nodemailer.createTransport({
       service: "gmail",
       host: "smtp.gmail.com",
       port: 465,
-      secure: true, // SSL for port 465
+      secure: true,
       auth: {
         user: process.env.EMAIL_USERNAME,
         pass: process.env.EMAIL_PASSWORD,
@@ -25,10 +24,10 @@ export const sendVerificationEmail = async (to, token) => {
       connectionTimeout: 60000, // 60 seconds
       greetingTimeout: 60000,
       socketTimeout: 60000,
-      debug: true, // Enable debug output
+      debug: true, 
     });
 
-    // Verify transporter configuration
+    // Verify transporter configuration (ITO YUNG MAKIKITA SA MESSAGE NG EMAIL)
     console.log("Verifying SMTP connection on port 465 (SSL)...");
     await transporter.verify();
     console.log("SMTP connection verified successfully!");
@@ -97,28 +96,25 @@ export const sendPasswordResetEmail = async (to, token) => {
       throw new Error("Email configuration missing.");
     }
 
-    // This URL points to your Frontend Route
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${token}`;
     console.log("Attempting to send password reset email from:", process.env.EMAIL_USERNAME);
     console.log("To recipient:", to);
 
-    // Use port 465 with SSL (port 587 is blocked by Render)
     const transporter = nodemailer.createTransport({
       service: "gmail",
       host: "smtp.gmail.com",
       port: 465,
-      secure: true, // SSL for port 465
+      secure: true, 
       auth: {
         user: process.env.EMAIL_USERNAME,
         pass: process.env.EMAIL_PASSWORD,
       },
-      connectionTimeout: 60000, // 60 seconds
+      connectionTimeout: 60000, 
       greetingTimeout: 60000,
       socketTimeout: 60000,
-      debug: true, // Enable debug output
+      debug: true,
     });
 
-    // Verify transporter configuration
     console.log("Verifying SMTP connection on port 465 (SSL)...");
     await transporter.verify();
     console.log("SMTP connection verified successfully!");

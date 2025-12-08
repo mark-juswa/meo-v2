@@ -12,6 +12,17 @@ export default function ApplicantDetails({ app }) {
         <li><strong>Type:</strong> <span>{app.applicationType || 'N/A'}</span></li>
         <li><strong>Address:</strong> <span>{app.box1?.addressOfLot || app.ownerDetails?.address || 'Not specified'}</span></li>
         <li><strong>Submitted:</strong> <span>{new Date(app.createdAt).toLocaleString()}</span></li>
+        {app.permit?.permitNumber && (
+          <li>
+            <strong>Permit Number:</strong> 
+            <span className="ml-2 font-mono text-green-700 font-bold bg-green-50 px-2 py-1 rounded">
+              {app.permit.permitNumber}
+            </span>
+          </li>
+        )}
+        {app.permit?.issuedAt && (
+          <li><strong>Permit Issued:</strong> <span>{new Date(app.permit.issuedAt).toLocaleString()}</span></li>
+        )}
       </ul>
     </div>
   );
