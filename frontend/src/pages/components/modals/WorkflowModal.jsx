@@ -9,7 +9,13 @@ import WorkflowHistory from './WorkflowHistory';
 import ConfirmationModal from './ConfirmationModal';
 import { XMarkIcon as XIcon } from '@heroicons/react/24/outline';
 
+// Helper function to ensure app._id is always a string
+const getAppIdString = (app) => {
+  return typeof app._id === 'object' ? String(app._id) : app._id;
+};
+
 export default function WorkflowModal({ role, app, onClose, onUpdate }) {
+  const appId = getAppIdString(app);
   const [activeTab, setActiveTab] = useState('details');
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [confirmProps, setConfirmProps] = useState({});
@@ -60,7 +66,7 @@ export default function WorkflowModal({ role, app, onClose, onUpdate }) {
     }
     
     // Clear rejection details and publish assessment
-    onUpdate(app._id, 'Payment Pending', {
+    onUpdate(appId, 'Payment Pending', {
       box5: assessmentData.box5,
       box6: assessmentData.box6,
       comments: 'Assessment fees calculated and published for payment.',

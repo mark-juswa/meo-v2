@@ -1,9 +1,13 @@
 import React from 'react';
 
-
+// Helper function to ensure app._id is always a string
+const getAppIdString = (app) => {
+  return typeof app._id === 'object' ? String(app._id) : app._id;
+};
 
 export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, onSaveAssessment }) {
   const status = app.status;
+  const appId = getAppIdString(app);
 
   const isPaid = app.paymentDetails?.status === 'Verified' || app.workflowHistory?.some(h => h.status === 'Payment Submitted' || h.status === 'Pending BFP');
   
@@ -20,7 +24,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
       confirmText: 'Confirm Rejection',
       onConfirm: (note) => {
         const prefix = role === 'bfpadmin' ? 'BFP Rejection: ' : (role === 'mayoradmin' ? 'Mayor Rejection: ' : 'MEO Rejection: ');
-        onUpdate(app._id, 'Rejected', {
+        onUpdate(appId, 'Rejected', {
           comments: prefix + note,
           isResolved: false,
         });
@@ -35,7 +39,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
         return (
           <div className="space-y-3">
             <p className="text-sm text-gray-600">Step 1: Review documents.</p>
-            <button onClick={() => onUpdate(app._id, 'Pending MEO', { comments: 'Accepted for review.' })} className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">Accept & Review</button>
+            <button onClick={() => onUpdate(appId, 'Pending MEO', { comments: 'Accepted for review.' })} className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">Accept & Review</button>
             <button onClick={handleReject} className="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium">Reject Application</button>
           </div>
         );
@@ -51,7 +55,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
                     {hasBfpApproval && !hasMayorApproval && (
                         <div className="bg-blue-50 p-3 rounded border border-blue-200">
                             <p className="text-xs text-blue-800 mb-2">BFP has issued FSEC. Forward to Mayor?</p>
-                            <button onClick={() => onUpdate(app._id, 'Pending Mayor', { comments: 'MEO: Forwarding to Mayor for endorsement.' })} className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+                            <button onClick={() => onUpdate(appId, 'Pending Mayor', { comments: 'MEO: Forwarding to Mayor for endorsement.' })} className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
                                 Forward to Mayor
                             </button>
                         </div>
@@ -61,7 +65,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
                     {hasMayorApproval && (
                         <div className="bg-green-50 p-3 rounded border border-green-200">
                             <p className="text-xs text-green-800 mb-2">Mayor has endorsed. Ready for Final Approval?</p>
-                            <button onClick={() => onUpdate(app._id, 'Approved', { comments: 'MEO: Final Approval Granted. Ready for Permit Issuance.' })} className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
+                            <button onClick={() => onUpdate(appId, 'Approved', { comments: 'MEO: Final Approval Granted. Ready for Permit Issuance.' })} className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
                                 Final Approve
                             </button>
                         </div>
@@ -69,7 +73,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
                     
                     {/* If neither BFP nor Mayor have approved yet */}
                     {!hasBfpApproval && (
-                         <button onClick={() => onUpdate(app._id, 'Pending BFP', { comments: 'MEO: Forwarding to BFP.' })} className="w-full px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-medium">
+                         <button onClick={() => onUpdate(appId, 'Pending BFP', { comments: 'MEO: Forwarding to BFP.' })} className="w-full px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-medium">
                             Forward to BFP
                         </button>
                     )}
@@ -94,8 +98,8 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
           <div className="space-y-3">
             <p className="text-sm text-gray-600">Verify Proof of Payment.</p>
             <div className="flex gap-2">
-                <button onClick={() => onUpdate(app._id, 'Pending BFP', { comments: 'Payment Verified. Forwarding to BFP.' })} className="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg">Accept</button>
-                <button onClick={() => onUpdate(app._id, 'Payment Pending', { comments: 'Invalid Receipt.' })} className="flex-1 px-3 py-2 bg-red-500 text-white rounded-lg">Reject</button>
+                <button onClick={() => onUpdate(appId, 'Pending BFP', { comments: 'Payment Verified. Forwarding to BFP.' })} className="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg">Accept</button>
+                <button onClick={() => onUpdate(appId, 'Payment Pending', { comments: 'Invalid Receipt.' })} className="flex-1 px-3 py-2 bg-red-500 text-white rounded-lg">Reject</button>
             </div>
           </div>
         );
@@ -108,7 +112,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
             <button onClick={() => onOpenConfirm({
                   title: 'Issue Final Permit',
                   message: 'This will generate the permit number and notify the user.',
-                  onConfirm: () => onUpdate(app._id, 'Permit Issued', { comments: 'Official Permit Issued.' })
+                  onConfirm: () => onUpdate(appId, 'Permit Issued', { comments: 'Official Permit Issued.' })
               })} className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">Issue Final Permit</button>
           </div>
         );
@@ -135,7 +139,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
                   message: 'Confirm inspection passed? This will notify MEO that FSEC is issued.',
                   confirmText: 'Approve (Notify MEO)',
                   onConfirm: () => {
-                    onUpdate(app._id, 'Pending Mayor', { 
+                    onUpdate(appId, 'Pending Mayor', { 
                         comments: 'BFP Inspection Passed. FSEC Issuance Completed. Forwarded to Mayor.' 
                     });
                   }
@@ -167,7 +171,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
             
             {/* APPROVE: Sends back to MEO with 'Pending MEO' status */}
             <button 
-                onClick={() => onUpdate(app._id, 'Pending MEO', { comments: "Mayor Permit Approved. Returned to MEO for finalization." })} 
+                onClick={() => onUpdate(appId, 'Pending MEO', { comments: "Mayor Permit Approved. Returned to MEO for finalization." })} 
                 className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
             >
               Approve
@@ -190,7 +194,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
       showInput: false,
       confirmText: 'Final Approve',
       onConfirm: () => {
-        onUpdate(app._id, 'Permit Issued', {
+        onUpdate(appId, 'Permit Issued', {
           comments: 'Permit approved and issued.',
         });
       },
@@ -205,7 +209,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
           <div className="space-y-3">
             <p className="text-sm text-gray-600">Step 1: Review documents and form data.</p>
             <button
-              onClick={() => onUpdate(app._id, 'Pending MEO', { comments: 'Application is under review by MEO.' })}
+              onClick={() => onUpdate(appId, 'Pending MEO', { comments: 'Application is under review by MEO.' })}
               className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
             >
               Accept and Begin Review
@@ -230,7 +234,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
         <div className="space-y-3">
           <p className="text-sm text-gray-600">Waiting for applicant to pay. Confirm if paid offline.</p>
           <button
-            onClick={() => onUpdate(app._id, 'Pending BFP', { comments: 'Payment confirmed (Walk-in). Forwarding to BFP.' })}
+            onClick={() => onUpdate(appId, 'Pending BFP', { comments: 'Payment confirmed (Walk-in). Forwarding to BFP.' })}
             className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
           >
             Confirm Payment
@@ -247,13 +251,13 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
             </p>
             <div className="flex space-x-2">
               <button
-                onClick={() => onUpdate(app._id, 'Pending BFP', { comments: 'Online Payment Verified. Forwarding to BFP.' })}
+                onClick={() => onUpdate(appId, 'Pending BFP', { comments: 'Online Payment Verified. Forwarding to BFP.' })}
                 className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
               >
                 Verify & Approve
               </button>
               <button
-                onClick={() => onUpdate(app._id, 'Payment Pending', { comments: 'Payment Proof Rejected. Please re-upload valid receipt.' })}
+                onClick={() => onUpdate(appId, 'Payment Pending', { comments: 'Payment Proof Rejected. Please re-upload valid receipt.' })}
                 className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
               >
                 Reject Receipt
@@ -267,7 +271,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
           <div className="space-y-3">
             <p className="text-sm text-gray-600">Waiting for BFP. Override if clearance received manually.</p>
             <button
-              onClick={() => onUpdate(app._id, 'Pending Mayor', { comments: 'BFP clearance received. Forwarding to Mayor.' })}
+              onClick={() => onUpdate(appId, 'Pending Mayor', { comments: 'BFP clearance received. Forwarding to Mayor.' })}
               className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
             >
               BFP Clearance Received (Forward to Mayor)
@@ -279,7 +283,7 @@ export default function WorkflowActions({ role, app, onUpdate, onOpenConfirm, on
           <div className="space-y-3">
             <p className="text-sm text-gray-600">Waiting for Mayor's Office approval.</p>
             <button
-              onClick={() => onUpdate(app._id, 'Approved', { comments: "Approved by Mayor's office." })}
+              onClick={() => onUpdate(appId, 'Approved', { comments: "Approved by Mayor's office." })}
               className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
             >
               Mayor Endorsement Received
@@ -321,7 +325,7 @@ if (role === 'bfpadmin') {
                   message: 'Confirm that the inspection passed. This will notify the MEO and the client to claim the FSEC at the BFP Office.',
                   confirmText: 'Approve & Notify',
                   onConfirm: () => {
-                    onUpdate(app._id, 'Pending Mayor', { 
+                    onUpdate(appId, 'Pending Mayor', { 
                       comments: 'BFP Inspection Passed. FSEC Issued. Forwarded to Mayor for final approval.' 
                     });
                   }
@@ -341,7 +345,7 @@ if (role === 'bfpadmin') {
                   showInput: true, 
                   confirmText: 'Reject Application',
                   onConfirm: (reason) => {
-                    onUpdate(app._id, 'Rejected BFP', {
+                    onUpdate(appId, 'Rejected BFP', {
                       comments: `BFP Rejection: ${reason}`,
                     });
                   }

@@ -718,13 +718,23 @@ export const serveFileFromDatabase = async (req, res) => {
         
         console.log('=== serveFileFromDatabase called ===');
         console.log('Application ID:', applicationId);
+        console.log('Application ID type:', typeof applicationId);
+        console.log('Application ID length:', applicationId?.length);
+        console.log('Is valid ObjectId:', mongoose.Types.ObjectId.isValid(applicationId));
         console.log('Document Index:', documentIndex);
         console.log('User ID:', req.user.userId);
         console.log('User Role:', req.user.role);
 
+        // Validate ObjectId format
+        if (!mongoose.Types.ObjectId.isValid(applicationId)) {
+            console.error('Invalid ObjectId format:', applicationId);
+            return res.status(400).json({ message: 'Invalid application ID format' });
+        }
+
         // Find the application
         let application = await BuildingApplication.findById(applicationId);
         if (!application) {
+            console.log('Not found in BuildingApplication, checking OccupancyApplication...');
             application = await OccupancyApplication.findById(applicationId);
         }
 

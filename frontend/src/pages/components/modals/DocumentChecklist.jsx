@@ -19,7 +19,8 @@ export default function DocumentChecklist({ app, role, onUpdate }) {
 
   const handleViewPaymentProof = async () => {
     try {
-      const response = await axiosPrivate.get(`/api/applications/${app._id}/payment-proof`, {
+      const appIdString = typeof app._id === 'object' ? String(app._id) : app._id;
+      const response = await axiosPrivate.get(`/api/applications/${appIdString}/payment-proof`, {
         responseType: 'blob'
       });
 
@@ -42,15 +43,21 @@ export default function DocumentChecklist({ app, role, onUpdate }) {
       console.log('App object:', app);
       console.log('App._id:', app._id);
       console.log('App._id type:', typeof app._id);
+      console.log('App._id constructor:', app._id?.constructor?.name);
+      console.log('App._id toString():', String(app._id));
       console.log('App._id length:', app._id?.length);
       console.log('Total documents:', uploadedDocs.length);
       console.log('Document at index:', uploadedDocs[documentIndex]);
       
+      // Convert _id to string if it's an object
+      const appIdString = typeof app._id === 'object' ? String(app._id) : app._id;
+      
       // Validate app._id exists and is complete
-      if (!app._id || app._id.length < 24) {
+      if (!appIdString || appIdString.length < 24) {
         console.error('Invalid application ID:', app._id);
+        console.error('Converted ID string:', appIdString);
         console.error('Full app object:', app);
-        alert(`Invalid application ID: ${app._id}. Please refresh the page and try again.`);
+        alert(`Invalid application ID: ${appIdString}. Please refresh the page and try again.`);
         return;
       }
 
@@ -61,13 +68,18 @@ export default function DocumentChecklist({ app, role, onUpdate }) {
         return;
       }
 
-      const url = `/api/applications/${app._id}/documents/${documentIndex}/file`;
+      const url = `/api/applications/${appIdString}/documents/${documentIndex}/file`;
       console.log('Constructed URL:', url);
       console.log('Making request to:', url);
       
       const response = await axiosPrivate.get(url, {
         responseType: 'blob'
       });
+      
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+      console.log('Response data type:', typeof response.data);
+      console.log('Response data instanceof Blob:', response.data instanceof Blob);
       
       const contentType = response.headers['content-type'] || 'application/octet-stream';
       const blob = new Blob([response.data], { type: contentType });
@@ -77,22 +89,38 @@ export default function DocumentChecklist({ app, role, onUpdate }) {
       setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
     } catch (error) {
       console.error('Error viewing document:', error);
-      console.error('App ID:', app._id, 'Document Index:', documentIndex);
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error response:', error.response);
+      console.error('Error response status:', error.response?.status);
+      console.error('Error response headers:', error.response?.headers);
+      console.error('Error response data type:', typeof error.response?.data);
+      console.error('Error response data instanceof Blob:', error.response?.data instanceof Blob);
+      console.error('App ID:', appIdString, 'Document Index:', documentIndex);
       
       // Handle blob error responses properly
       if (error.response?.data instanceof Blob) {
         try {
           const errorText = await error.response.data.text();
-          const errorJson = JSON.parse(errorText);
-          console.error('Error details:', errorJson);
-          alert(`Failed to load document: ${errorJson.message || 'Unknown error'}`);
+          console.error('Error blob as text:', errorText);
+          try {
+            const errorJson = JSON.parse(errorText);
+            console.error('Error parsed JSON:', errorJson);
+            alert(`Failed to load document: ${errorJson.message || 'Unknown error'}`);
+          } catch (jsonError) {
+            console.error('Error text is not JSON:', jsonError);
+            alert(`Failed to load document: ${errorText}`);
+          }
         } catch (parseError) {
           console.error('Could not parse error response:', parseError);
           alert('Failed to load document. Please try again.');
         }
+      } else if (error.response?.data) {
+        console.error('Error details (non-blob):', error.response.data);
+        alert(`Failed to load document: ${error.response.data.message || JSON.stringify(error.response.data)}`);
       } else {
-        console.error('Error details:', error.response?.data || error.message);
-        alert(`Failed to load document: ${error.response?.data?.message || error.message || 'Unknown error'}`);
+        console.error('Error has no response data');
+        alert(`Failed to load document: ${error.message || 'Unknown error'}`);
       }
     }
   };
@@ -100,7 +128,8 @@ export default function DocumentChecklist({ app, role, onUpdate }) {
   const handleAddMissingItem = () => {
     if (!newItem.trim()) return;
     const updated = [...missingDocs, newItem.trim()];
-    onUpdate(app._id, 'Rejected', {
+    const appIdString = typeof app._id === 'object' ? String(app._id) : app._id;
+    onUpdate(appIdString, 'Rejected', {
       comments: `Marked incomplete. Missing: ${newItem.trim()}`,
       missingDocuments: updated,
       isResolved: false,
@@ -119,7 +148,8 @@ export default function DocumentChecklist({ app, role, onUpdate }) {
     
     const comment = updated.length === 0 ? 'All document deficiencies resolved.' : `Resolved: ${itemToRemove}`;
 
-    onUpdate(app._id, newStatus, {
+    const appIdString = typeof app._id === 'object' ? String(app._id) : app._id;
+    onUpdate(appIdString, newStatus, {
       comments: comment,
       missingDocuments: updated,
       isResolved: updated.length === 0,
